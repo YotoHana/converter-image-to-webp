@@ -1,55 +1,77 @@
-from PIL import Image
+import sys
 import os
-import tkinter as tk
-from tkinter import filedialog
-from tkinter import messagebox
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
+from PIL import Image
+
+global img_list
+
+def openFileDialog():
+    options = QFileDialog.Options()
+    files, _ = QFileDialog.getOpenFileNames(window, 'Выберите файлы', '', 'All Files (*)', options=options)
+    if files:
+        file_list.clear()
+        total_size = 0
+        for file in files:
+            img_list.append(file)
+            file_list.addItem(file)
+            total_size += os.path.getsize(file)
+        size_label.setText(f'Общий размер файлов: {total_size / 1024:.2f} KB')
+
+def update_label(value):
+    label.setText(str(value))
+
+def startConvert():
+    for i in img_list:
+        convert(i)
 
 def convert(input_path):
     img = Image.open(input_path)
     output_path = os.path.splitext(input_path)[0] + '.webp'
-    img.save(output_path, 'WEBP', quality=slider.get())
-    messagebox.showinfo("Успех", "Конвертация выполнена успешно!")
+    img.save(output_path, 'WEBP', quality=slider.value())
+    file_list.clear()
+    size_label.setText('Конвертирование прошло успешно!')
 
-def start_convert():
-    for i in file_list:
-        convert(i)
-    print("Конвертация файлов...")
-    print("Выбранное значение качества:", slider.get())
-    print("Загруженные файлы:", file_list)
+img_list = []
 
-def upload_files():
-    global file_list
-    files = filedialog.askopenfilenames(title="Выберите файлы")
-    file_list.extend(files)
-    files_display.config(state=tk.NORMAL)
-    files_display.delete(1.0, tk.END)  # Очищаем текстовое поле
-    files_display.insert(tk.END, '\n'.join(file_list))  # Добавляем новые файлы
-    files_display.config(state=tk.DISABLED)
+app = QApplication(sys.argv)
 
-# Основное окно
-root = tk.Tk()
-root.title("Конвертер webp")
-root.geometry('400x400')
-root.minsize(400, 400)
+window = QWidget()
+window.setWindowTitle('Конвертер Webp')
 
-# Слайдер
-slider = tk.Scale(root, from_=1, to=100, orient=tk.HORIZONTAL, label="Выберите качество", length=200)
-slider.pack(pady=10)
+layout = QVBoxLayout()
+layout_slider = QHBoxLayout()
 
-# Кнопка загрузки файлов
-upload_button = tk.Button(root, text="Загрузить файлы", command=upload_files)
-upload_button.pack(pady=10)
+slider = QSlider(Qt.Orientation.Horizontal)
+slider.setMinimum(1)
+slider.setMaximum(100)
+slider.setValue(80)
+slider.setFixedSize(200, 20)
+layout_slider.addWidget(slider)
 
-# Текстовое поле для отображения загруженных файлов
-files_display = tk.Text(root, height=10, width=50, state=tk.DISABLED)
-files_display.pack(pady=10)
+label = QLabel(str(slider.value()))
+layout_slider.addWidget(label)
+slider.valueChanged.connect(update_label)
+layout.addLayout(layout_slider)
 
-# Список загруженных файлов
-file_list = []
+file_list = QListWidget()
+layout.addWidget(file_list)
 
-# Кнопка конвертации
-convert_button = tk.Button(root, text="Конвертировать", command=start_convert)
-convert_button.pack(pady=10)
+size_label = QLabel('Размер файлов будет показан здесь')
+layout.addWidget(size_label)
 
-# Запуск основного цикла
-root.mainloop()
+select_button = QPushButton('Выбрать файлы')
+select_button.clicked.connect(openFileDialog)
+layout.addWidget(select_button)
+
+convert_button = QPushButton('Конвертировать')
+convert_button.clicked.connect(startConvert)
+layout.addWidget(convert_button)
+
+
+
+window.setLayout(layout)
+window.resize(400,400)
+window.show()
+sys.exit(app.exec_())
