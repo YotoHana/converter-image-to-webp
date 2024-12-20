@@ -73,5 +73,7 @@ layout.addWidget(convert_button)
 
 window.setLayout(layout)
 window.resize(400,400)
+window.setMaximumSize(1000, 400)
+window.setMinimumSize(300, 400)
 window.show()
 sys.exit(app.exec_())
